@@ -17,7 +17,7 @@ const mockStocks: Stock[] = [
 { stockId: "14", symbol: "PYPL", name: "PayPal Holdings", currentPrice: 71.85, change: -0.65, changePercent: -0.90, lastUpdated: "2026-08-10" },
 { stockId: "15", symbol: "UBER", name: "Uber Technologies", currentPrice: 82.40, change: 1.20, changePercent: 1.48, lastUpdated: "2026-08-10" },
 { stockId: "16", symbol: "SHOP", name: "Shopify Inc.", currentPrice: 98.15, change: 2.75, changePercent: 2.88, lastUpdated: "2026-08-10" },
-{ stockId: "17", symbol: "SQ", name: "Block Inc.", currentPrice: 67.30, change: -1.10, changePercent: -1.61, lastUpdated: "2026-08-10" },
+{ stockId: "17", symbol: "XYZ", name: "Block Inc.", currentPrice: 67.30, change: -1.10, changePercent: -1.61, lastUpdated: "2026-08-10" },
 { stockId: "18", symbol: "SNAP", name: "Snap Inc.", currentPrice: 11.85, change: 0.32, changePercent: 2.77, lastUpdated: "2026-08-10" },
 { stockId: "19", symbol: "PINS", name: "Pinterest Inc.", currentPrice: 34.60, change: -0.85, changePercent: -2.40, lastUpdated: "2026-08-10" },
 { stockId: "20", symbol: "SPOT", name: "Spotify Technology", currentPrice: 412.90, change: 6.50, changePercent: 1.60, lastUpdated: "2026-08-10" },
