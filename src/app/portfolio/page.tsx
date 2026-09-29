@@ -1,42 +1,64 @@
-// src/app/portfolio/page.tsx (top, above the component)
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import { mockStocks } from "@/lib/mockStocks";
-import { mockUserPortfolio, mockHoldings } from "@/lib/mockPortfolio";
+import { prisma } from "@/lib/prisma";
+import { getCurrentPrice } from "@/lib/redis";
 
-const enrichedHoldings = mockHoldings.map((holding) => {
-  const stock = mockStocks.find((s) => s.stockId === holding.stockId);
+export default async function PortfolioPage() {
+  const session = await auth();
+  if (!session || !session.user) {
+    redirect("/login");
+  }
 
-  return {
-    stockId: holding.stockId,
-    symbol: stock?.symbol ?? "UNKNOWN",
-    name: stock?.name ?? "Unknown",
-    currentPrice: stock?.currentPrice ?? 0,
-    quantity: holding.quantity,
-    avgBuyPrice: holding.avgBuyPrice,
-    valueInvested: holding.quantity * holding.avgBuyPrice,
-    valueNow: holding.quantity * (stock?.currentPrice ?? 0),
-  };
-});
+  const userPortfolio = await prisma.userPortfolio.upsert({
+    where: { userId: session.user.id },
+    update: {},
+    create: { userId: session.user.id },
+  });
 
-const totalInvested = enrichedHoldings.reduce(
-    (sum, holding) => sum + holding.valueInvested,
-    0
-);
+  const holdings = await prisma.portfolioHolding.findMany({
+    where: { userId: session.user.id },
+  });
 
-const totalValueNow = enrichedHoldings.reduce(
-    (sum, holding) => sum + holding.valueNow,
-    0
-);
+  const enrichedHoldings = await Promise.all(
+    holdings.map(async function (holding) {
+      const stock = mockStocks.find(function (s) {
+        return s.symbol === holding.stockId;
+      });
 
-export default function PortfolioPage() {
-    return (
-      <div className="p-4">
-        <p>Current Balance: ${mockUserPortfolio.currentBalance}</p>
-        <p>Investment: ${totalInvested}</p>
-        <p>Investment Value Now: ${totalValueNow}</p>
-  
-        <h2 className="mt-4 font-semibold">Invested Stocks:</h2>
-        <div className="flex flex-col gap-3 mt-2">
-          {enrichedHoldings.map((h) => (
+      const livePrice = await getCurrentPrice(holding.stockId);
+      const currentPrice = livePrice ?? stock?.currentPrice ?? 0;
+
+      return {
+        stockId: holding.stockId,
+        symbol: stock?.symbol ?? "UNKNOWN",
+        name: stock?.name ?? "Unknown",
+        currentPrice: currentPrice,
+        quantity: holding.quantity,
+        avgBuyPrice: holding.avgBuyPrice,
+        valueInvested: holding.quantity * holding.avgBuyPrice,
+        valueNow: holding.quantity * currentPrice,
+      };
+    })
+  );
+
+  const totalInvested = enrichedHoldings.reduce(function (sum, holding) {
+    return sum + holding.valueInvested;
+  }, 0);
+
+  const totalValueNow = enrichedHoldings.reduce(function (sum, holding) {
+    return sum + holding.valueNow;
+  }, 0);
+
+  return (
+    <div className="p-4">
+      <p>Current Balance: ${userPortfolio.currentBalance}</p>
+      <p>Investment: ${totalInvested}</p>
+      <p>Investment Value Now: ${totalValueNow}</p>
+      <h2 className="mt-4 font-semibold">Invested Stocks:</h2>
+      <div className="flex flex-col gap-3 mt-2">
+        {enrichedHoldings.map(function (h) {
+          return (
             <div key={h.stockId} className="bg-gray-100 rounded-lg p-4 flex justify-between">
               <div>
                 <p className="font-semibold">{h.symbol}</p>
@@ -49,8 +71,9 @@ export default function PortfolioPage() {
                 <p>Value Now: ${h.valueNow}</p>
               </div>
             </div>
-          ))}
-        </div>
+          );
+        })}
       </div>
-    );
-  }
+    </div>
+  );
+}

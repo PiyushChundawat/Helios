@@ -21,3 +21,32 @@ model PriceHistory {
 
   @@index([stockId, timestamp])
 }
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  image        String?
+  passwordHash String?
+  createdAt    DateTime @default(now())
+}
+
+model Watchlist {
+  userId    String   @id
+  stockIds  String[]
+}
+
+model UserPortfolio {
+  userId         String @id
+  currentBalance Float  @default(10000)
+}
+
+model PortfolioHolding {
+  id          String @id @default(cuid())
+  userId      String
+  stockId     String
+  quantity    Float
+  avgBuyPrice Float
+
+  @@unique([userId, stockId])
+}

@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import PriceChart from "@/components/stock/PriceChart";
 import { prisma } from "@/lib/prisma";
 import { getRedisClient } from "@/lib/redis";
+import AddToWatchlistButton from "@/components/stock/AddToWatchlistButton";
+import TradeForm from "@/components/stock/TradeForm";
 
 const USD_TO_INR = 83;
 
@@ -17,12 +19,14 @@ export default async function StockHistoryPage({
   const stock = mockStocks.find((s) => s.symbol === symbol.toUpperCase());
   if (!stock) notFound();
 
-  const [history, currentPrice] = await Promise.all([
+  const [history, liveQuote] = await Promise.all([
     getHistory(stock.symbol),
     getCurrentPrice(stock.symbol),
   ]);
 
-  const displayPrice = currentPrice ?? stock.currentPrice;
+  const displayPrice = liveQuote?.price ?? stock.currentPrice;
+  const displayChangePercent = liveQuote?.changePercent ?? stock.changePercent;
+  const isPositive = displayChangePercent >= 0;
 
   return (
     <div className="p-4">
@@ -32,10 +36,13 @@ export default async function StockHistoryPage({
           <p className="text-gray-500">{stock.name}</p>
           <p className="mt-2">Current price in $: {displayPrice}</p>
           <p>Current price in Rs.: {(displayPrice * USD_TO_INR).toFixed(0)}</p>
+          <p className={isPositive ? "text-green-600" : "text-red-600"}>
+                {isPositive ? "+" : ""}
+                {displayChangePercent.toFixed(2)}%
+          </p>
         </div>
-        <button className="bg-gray-200 rounded-lg px-4 py-2">
-          Add to Watchlist
-        </button>
+        <AddToWatchlistButton symbol={stock.symbol} />
+        <TradeForm symbol={stock.symbol} />
       </div>
 
       <div className="mt-8">
@@ -62,9 +69,9 @@ async function getHistory(symbol: string) {
 }
 
 async function getCurrentPrice(symbol: string) {
-  const client = await getRedisClient();
-  const raw = await client.get(`stock:${symbol}`);
-  if (!raw) return null;
-  const data = JSON.parse(raw);
-  return data.c;
-}
+    const client = await getRedisClient();
+    const raw = await client.get(`stock:${symbol}`);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return { price: data.c, changePercent: data.dp };
+  }

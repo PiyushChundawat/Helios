@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getRedisClient } from "@/lib/redis";
 
-export async function GET(request: NextRequest, context: { params: { symbol: string } }) {
-  const symbol = context.params.symbol;
+export async function GET(request: NextRequest, context: { params: Promise<{ symbol: string }> }) {
+  const params = await context.params;
+  const symbol = params.symbol;
   const client = await getRedisClient();
   const cacheKey = `history:${symbol}`;
 
