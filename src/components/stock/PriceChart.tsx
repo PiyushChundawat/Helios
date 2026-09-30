@@ -42,7 +42,7 @@ export default function PriceChart({ data }: { data: PriceHistory[] }) {
             fontSize: 12,
           }}
           labelFormatter={(value) =>
-            new Date(value).toLocaleString("en-US", {
+            new Date(value as string | number).toLocaleString("en-US", {
               month: "short",
               day: "numeric",
               hour: "2-digit",
